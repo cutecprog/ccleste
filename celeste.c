@@ -280,7 +280,7 @@ static inline bool solid_at(float x,float y,float w,float h) { return solid_at(i
 ////////////////////////////////////////////////
 
 // ~celeste~
-// matt thorson + noel berry
+// maddy thorson + noel berry
 
 // globals
 //////////////
@@ -1752,16 +1752,17 @@ void Celeste_P8_update() {
 	if (is_title()) {
 		if (!start_game && (P8btn(k_jump) || P8btn(k_dash))) {
 			P8music(-1, 0, 0);
-			start_game_flash=50;
-			start_game=true;
+			//start_game_flash=-30; // = 50;
+			//start_game=true;
 			P8sfx(38);
+            begin_game();
 		}
-		if (start_game) {
+		/*if (start_game) {
 			start_game_flash-=1;
 			if (start_game_flash<=-30) {
 				begin_game();
 			}
-		}
+		}*/
 	}
 }
 
@@ -1774,7 +1775,7 @@ void Celeste_P8_draw() {
 	P8pal_reset();
    
 	// start game flash
-	if (start_game) {
+	/*if (start_game) {
 		int c=10;
 		if (start_game_flash>10) {
 			if (frames%10<5) {
@@ -1795,7 +1796,7 @@ void Celeste_P8_draw() {
 			P8pal(1,c);
 			P8pal(7,c);
 		}
-	}
+	}*/
 
 	// clear screen
 	int bg_col = 0;
@@ -1887,7 +1888,7 @@ void Celeste_P8_draw() {
 	// credits
 	if (is_title()) {
 		P8print("x+c",58,80,5);
-		P8print("matt thorson",42,96,5);
+		P8print("maddy thorson",42,96,5);
 		P8print("noel berry",46,102,5);
 	}
    
