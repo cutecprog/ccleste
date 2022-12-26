@@ -420,9 +420,7 @@ static void ReadGamepadInput(Uint16* out_buttons);
 
 static void mainLoop(void) {
 	const Uint8* kbstate = SDL_GetKeyState(NULL);
-		
-	static int reset_input_timer = 0;
-	//hold F9 (select+start+y) to reset
+
 	if (initial_game_state != NULL
 #ifdef _3DS
 			&& kbstate[SDLK_LSHIFT] && kbstate[SDLK_ESCAPE] && kbstate[SDLK_F11]
@@ -530,12 +528,6 @@ static void mainLoop(void) {
 	}
 
 	if (!TAS) {
-		/*if (kbstate[SDLK_LEFT])  buttons_state |= (1<<0);
-		if (kbstate[SDLK_RIGHT]) buttons_state |= (1<<1);
-		if (kbstate[SDLK_UP])    buttons_state |= (1<<2);
-		if (kbstate[SDLK_DOWN])  buttons_state |= (1<<3);
-		if (kbstate[SDLK_z] || kbstate[SDLK_c] || kbstate[SDLK_n]) buttons_state |= (1<<4);
-		if (kbstate[SDLK_x] || kbstate[SDLK_v] || kbstate[SDLK_m]) buttons_state |= (1<<5);*/
 		if (kbstate[SDLK_a])  buttons_state |= (1<<0);
 		if (kbstate[SDLK_d]) buttons_state |= (1<<1);
 		if (kbstate[SDLK_w])    buttons_state |= (1<<2);
