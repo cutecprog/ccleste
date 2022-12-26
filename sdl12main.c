@@ -428,23 +428,18 @@ static void mainLoop(void) {
 			&& kbstate[SDLK_LSHIFT] && kbstate[SDLK_ESCAPE] && kbstate[SDLK_F11]
 #else
 			//&& kbstate[SDLK_F9]
-			&& paused && buttons_state & 0b110000
+			&& paused && (buttons_state & 0b010001) == 0b010001
 #endif
 	) {
-		//reset_input_timer++;
-		//if (reset_input_timer >= 30) {
-			//reset_input_timer=0;
-			p8_rectfill(0,0, 128,128, 0); // This line is important for reasons I don't understand
 			//reset
+			paused = 0;
 			OSDset("reset");
 			Celeste_P8_load_state(initial_game_state);
 			Celeste_P8_set_rndseed((unsigned)(time(NULL) + SDL_GetTicks()));
 			Mix_HaltChannel(-1);
 			Mix_HaltMusic();
 			Celeste_P8_init();
-			//paused = 0;
-		//}
-	} //else reset_input_timer = 0;
+	}
 
 	Uint16 prev_buttons_state = buttons_state;
 	buttons_state = 0;
