@@ -533,12 +533,18 @@ static void mainLoop(void) {
 	}
 
 	if (!TAS) {
-		if (kbstate[SDLK_LEFT])  buttons_state |= (1<<0);
+		/*if (kbstate[SDLK_LEFT])  buttons_state |= (1<<0);
 		if (kbstate[SDLK_RIGHT]) buttons_state |= (1<<1);
 		if (kbstate[SDLK_UP])    buttons_state |= (1<<2);
 		if (kbstate[SDLK_DOWN])  buttons_state |= (1<<3);
 		if (kbstate[SDLK_z] || kbstate[SDLK_c] || kbstate[SDLK_n]) buttons_state |= (1<<4);
-		if (kbstate[SDLK_x] || kbstate[SDLK_v] || kbstate[SDLK_m]) buttons_state |= (1<<5);
+		if (kbstate[SDLK_x] || kbstate[SDLK_v] || kbstate[SDLK_m]) buttons_state |= (1<<5);*/
+		if (kbstate[SDLK_a])  buttons_state |= (1<<0);
+		if (kbstate[SDLK_d]) buttons_state |= (1<<1);
+		if (kbstate[SDLK_w])    buttons_state |= (1<<2);
+		if (kbstate[SDLK_s])  buttons_state |= (1<<3);
+		if (kbstate[SDLK_m] || kbstate[SDLK_o]) buttons_state |= (1<<4);
+		if (kbstate[SDLK_k]) buttons_state |= (1<<5);
 	} else if (TAS && !paused) {
 		static int t = 0;
 		t++;
@@ -556,6 +562,13 @@ static void mainLoop(void) {
 		p8_rectfill(x0-1,y0-1, 6*4+x0+1,6+y0+1, 6);
 		p8_rectfill(x0,y0, 6*4+x0,6+y0, 0);
 		p8_print("paused", x0+1, y0+1, 7);
+		
+		// Jank AF
+		if (buttons_state & 0b110000) {
+			Celeste_P8_init();
+			p8_rectfill(0,0, 128,128, 0);
+			p8_print("game reset", x0-8, y0+9, 7);
+		}
 	} else {
 		Celeste_P8_update();
 		Celeste_P8_draw();

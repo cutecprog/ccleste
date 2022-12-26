@@ -388,7 +388,7 @@ static void begin_game() {
 	music_timer=0;
 	start_game=false;
 	P8music(0,0,7);
-	load_room(0,0);
+	load_room(6,3);
 }
 
 static int level_index() {
@@ -1444,7 +1444,7 @@ static void ORB_draw(OBJ* this) {
 	if (this->spd.y==0 && hit!=NULL) {
 		music_timer=45;
 		P8sfx(51);
-		freeze=10;
+		//freeze=10;
 		shake=10;
 		destroy_self = true; //LEMON: to avoid reading off dead object
 		max_djump=2;
@@ -1750,7 +1750,7 @@ void Celeste_P8_update() {
    
 	// start game
 	if (is_title()) {
-		if (!start_game && (P8btn(k_jump) || P8btn(k_dash))) {
+		if (P8btn(k_jump) && P8btn(k_dash)) {
 			P8music(-1, 0, 0);
 			P8sfx(38);
             begin_game();

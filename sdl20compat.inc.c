@@ -99,5 +99,9 @@ static void SDL_Flip(SDL_Surface* screen) {
 #define SDLK_z SDL_SCANCODE_Z
 #define SDLK_e SDL_SCANCODE_E
 #define SDLK_v SDL_SCANCODE_V
+#define SDLK_w SDL_SCANCODE_W
+#define SDLK_m SDL_SCANCODE_M
+#define SDLK_o SDL_SCANCODE_O
+#define SDLK_k SDL_SCANCODE_K
 
 #define sym scancode // SDL_Keysym.sym -> SDL_Keysym.scancode
