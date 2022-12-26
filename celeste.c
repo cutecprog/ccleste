@@ -388,7 +388,7 @@ static void begin_game() {
 	music_timer=0;
 	start_game=false;
 	P8music(0,0,7);
-	load_room(6,3);
+	load_room(0,0);
 }
 
 static int level_index() {
