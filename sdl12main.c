@@ -361,17 +361,6 @@ static void ReadGamepadInput(Uint16* out_buttons);
 static void mainLoop(void) {
 	const Uint8* kbstate = SDL_GetKeyState(NULL);
 
-	if (initial_game_state != NULL
-			&& paused && (buttons_state & 0b010001) == 0b010001) {
-		//reset
-		paused = 0;
-		OSDset("reset");
-		Celeste_P8_load_state(initial_game_state);
-		Celeste_P8_set_rndseed((unsigned)(time(NULL) + SDL_GetTicks()));
-		Mix_HaltChannel(-1);
-		Mix_HaltMusic();
-		Celeste_P8_init();
-	}
 
 	Uint16 prev_buttons_state = buttons_state;
 	buttons_state = 0;
@@ -476,10 +465,20 @@ static void mainLoop(void) {
 
 	if (paused) {
 		const int x0 = PICO8_W/2-3*4, y0 = 8;
-
 		p8_rectfill(x0-1,y0-1, 6*4+x0+1,6+y0+1, 6);
 		p8_rectfill(x0,y0, 6*4+x0,6+y0, 0);
 		p8_print("paused", x0+1, y0+1, 7);
+		if (initial_game_state != NULL
+				&& (buttons_state & 0b010001) == 0b010001) {
+			//reset
+			paused = 0;
+			OSDset("reset");
+			Celeste_P8_load_state(initial_game_state);
+			Celeste_P8_set_rndseed((unsigned)(time(NULL) + SDL_GetTicks()));
+			Mix_HaltChannel(-1);
+			Mix_HaltMusic();
+			Celeste_P8_init();
+		}
 	} else {
 		Celeste_P8_update();
 		Celeste_P8_draw();
