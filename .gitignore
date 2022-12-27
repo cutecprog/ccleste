@@ -8,6 +8,7 @@ build/
 *.3dsx
 *.elf
 *.smdh
+*.swp
 win-build/
 em-build/
 ccleste-win.zip
