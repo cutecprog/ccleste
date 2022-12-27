@@ -753,13 +753,6 @@ int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
 			int y = INT_ARG() - camera_y;
 			int col = INT_ARG() % 16;
 
-#ifdef _3DS
-			if (!strcmp(str, "x+c")) {
-				//this is confusing, as 3DS uses a+b button, so use this hack to make it more appropiate
-				str = "a+b";
-			}
-#endif
-
 			p8_print(str,x,y,col);
 		} break;
 		case CELESTE_P8_RECTFILL: { //rectfill(x0,y0,x1,y1,col)
