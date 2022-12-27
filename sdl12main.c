@@ -321,16 +321,9 @@ int main(int argc, char** argv) {
 	printf("ready\n");
 
 	SDL_WM_ToggleFullScreen(screen);
-	/*{
-		FILE* start_fullscreen_f = fopen("ccleste-start-fullscreen.txt", "r");
-		const char* start_fullscreen_v = getenv("CCLESTE_START_FULLSCREEN");
-		if (start_fullscreen_f || (start_fullscreen_v && *start_fullscreen_v)) {
-			SDL_WM_ToggleFullScreen(screen);
-		}
-		if (start_fullscreen_f) fclose(start_fullscreen_f);
-	}*/
 
-	while (running) mainLoop();
+	while (running)
+		mainLoop();
 
 	if (game_state) SDL_free(game_state);
 	if (initial_game_state) SDL_free(initial_game_state);
@@ -366,14 +359,14 @@ static void mainLoop(void) {
 
 	if (initial_game_state != NULL
 			&& paused && (buttons_state & 0b010001) == 0b010001) {
-			//reset
-			paused = 0;
-			OSDset("reset");
-			Celeste_P8_load_state(initial_game_state);
-			Celeste_P8_set_rndseed((unsigned)(time(NULL) + SDL_GetTicks()));
-			Mix_HaltChannel(-1);
-			Mix_HaltMusic();
-			Celeste_P8_init();
+		//reset
+		paused = 0;
+		OSDset("reset");
+		Celeste_P8_load_state(initial_game_state);
+		Celeste_P8_set_rndseed((unsigned)(time(NULL) + SDL_GetTicks()));
+		Mix_HaltChannel(-1);
+		Mix_HaltMusic();
+		Celeste_P8_init();
 	}
 
 	Uint16 prev_buttons_state = buttons_state;
@@ -498,11 +491,12 @@ static void mainLoop(void) {
 	unsigned target_millis;
 	// frame timing for 30fps is 33.333... ms, but we only have integer granularity
 	// so alternate between 33 and 34 ms, like [33,33,34,33,33,34,...] which averages out to 33.333...
-	if (t < 2) target_millis = 33;
-	else       target_millis = 34;
-
-	if (++t == 3) t = 0;
-
+	if (t++ < 2)
+		target_millis = 33;
+	else {
+		target_millis = 34;
+		t=0;
+	}
 	if (frame_time < target_millis) {
 		SDL_Delay(target_millis - frame_time);
 	}
