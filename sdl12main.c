@@ -237,6 +237,8 @@ static void* game_state = NULL;
 static Mix_Music* game_state_music = NULL;
 static void mainLoop(void);
 static FILE* TAS = NULL;
+static void InitGamepadInput(void);
+
 
 int main(int argc, char** argv) {
 	SDL_CHECK(SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO) == 0);
@@ -268,7 +270,9 @@ int main(int argc, char** argv) {
 	printf("game state size %gkb\n", Celeste_P8_get_state_size()/1024.);
 
 	printf("now loading...\n");
-
+	
+	InitGamepadInput();
+	
 	{
 		const unsigned char loading_bmp[] = {
 			0x42,0x4d,0xca,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x82,0x00,
@@ -906,8 +910,9 @@ static struct mapping controller_mappings[30] = {
 	{0xff, 0xff}
 };
 static const Uint16 stick_deadzone = 32767 / 2; //about half
+static SDL_GameController* controller = NULL;
 
-static void ReadGamepadInput(Uint16* out_buttons) {
+static void InitGamepadInput() {
 	static _Bool read_config = 0;
 	if (!read_config) {
 		read_config = 1;
@@ -951,29 +956,24 @@ static void ReadGamepadInput(Uint16* out_buttons) {
 			}
 		}
 	}
-
-	static SDL_GameController* controller = NULL;
-	if (!controller) {
-		static int tries_left = 30;
-		if (!tries_left) return;
-		tries_left--;
-
-		//use first available controller
-		int count = SDL_NumJoysticks();
-		printf("sdl reports %i controllers\n", count);
-		for (int i = 0; i < count; i++) {
-			if (SDL_IsGameController(i)) {
-				controller = SDL_GameControllerOpen(i);
-				if (!controller) {
-					fprintf(stderr, "error opening controller: %s\n", SDL_GetError());
-					return;
-				}
-				printf("picked controller: '%s'\n", SDL_GameControllerName(controller));
-				break;
+	if (controller)
+		return;
+	//use first available controller
+	int count = SDL_NumJoysticks();
+	printf("sdl reports %i controllers\n", count);
+	for (int i = 0; i < count; i++) {
+		if (SDL_IsGameController(i)) {
+			controller = SDL_GameControllerOpen(i);
+			if (!controller) {
+				fprintf(stderr, "error opening controller: %s\n", SDL_GetError());
+				return;
 			}
+			printf("picked controller: '%s'\n", SDL_GameControllerName(controller));
 		}
 	}
+}
 
+static void ReadGamepadInput(Uint16* out_buttons) {
 	//pico 8 buttons and pseudo buttons
 	for (int i = 0; i < sizeof controller_mappings / sizeof *controller_mappings; i++) {
 		struct mapping mapping = controller_mappings[i];
