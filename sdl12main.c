@@ -413,12 +413,15 @@ static void mainLoop(void) {
 	} else if (TAS && !paused) {
 		static int t = 0;
 		t++;
-		if (t==1) buttons_state = 1<<4;
+		if (t==1)
+			buttons_state = (1<<4) + (1<<5);
 		else if (t > 80) {
 			int btn;
 			fscanf(TAS, "%d,", &btn);
 			buttons_state = btn;
-		} else buttons_state = 0;
+		} else
+			buttons_state = 0;
+		printf("%i: %i\n",t, buttons_state);
 	}
 
 	if (paused) {
