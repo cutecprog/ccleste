@@ -17,15 +17,7 @@
 #include "celeste.h"
 
 static void ErrLog(char* fmt, ...) {
-#ifdef _3DS
-	/*FILE* f = fopen("sdmc:/ccleste.txt", "a");
-	if (!f) return;
-	fprintf(f, "%li \t", (long int)time(NULL));*/
-	FILE* f = stdout; //bottom screen console
-#else
 	FILE* f = stderr;
-#endif
-
 	va_list ap;
 	va_start(ap, fmt);
 	vfprintf(f, fmt, ap);
@@ -43,11 +35,7 @@ Mix_Music* mus[6] = {NULL};
 #define PICO8_W 128
 #define PICO8_H 128
 
-#ifdef _3DS
-static const int scale = 2;
-#else
 static int scale = 4;
-#endif
 
 static const SDL_Color base_palette[16] = {
 	{0x00, 0x00, 0x00},
@@ -81,16 +69,12 @@ static void ResetPalette(void) {
 }
 
 static char* GetDataPath(char* path, int n, const char* fname) {
-#ifdef _3DS
-	snprintf(path, n, "romfs:/%s", fname);
-#else
 #ifdef _WIN32
 	char pathsep = '\\';
 #else
 	char pathsep = '/';
 #endif //_WIN32
 	snprintf(path, n, "data%c%s", pathsep, fname);
-#endif //_3DS
 
 	return path;
 }
@@ -238,7 +222,7 @@ static Mix_Music* game_state_music = NULL;
 static void mainLoop(void);
 static FILE* TAS = NULL;
 static void InitGamepadInput(void);
-
+static int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...);
 
 int main(int argc, char** argv) {
 	SDL_CHECK(SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO) == 0);
@@ -275,7 +259,6 @@ int main(int argc, char** argv) {
 	
 	LoadData();
 
-	int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...);
 	Celeste_P8_set_call_func(pico8emu);
 
 	//for reset
@@ -298,8 +281,10 @@ int main(int argc, char** argv) {
 	while (running)
 		mainLoop();
 
-	if (game_state) SDL_free(game_state);
-	if (initial_game_state) SDL_free(initial_game_state);
+	if (game_state)
+		SDL_free(game_state);
+	if (initial_game_state)
+		SDL_free(initial_game_state);
 
 	SDL_FreeSurface(gfx);
 	SDL_FreeSurface(font);
