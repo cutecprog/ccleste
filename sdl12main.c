@@ -414,6 +414,7 @@ static void mainLoop(void) {
 		static int t = 0;
 		t++;
 		if (t==1)
+			// Start game by pressing dash and jump
 			buttons_state = (1<<4) + (1<<5);
 		else if (t > 80) {
 			int btn;
