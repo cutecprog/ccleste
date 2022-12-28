@@ -225,6 +225,7 @@ static void InitGamepadInput(void);
 static int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...);
 
 int main(int argc, char** argv) {
+	// SDL initialization that I don't understand
 	SDL_CHECK(SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO) == 0);
 #if SDL_MAJOR_VERSION >= 2
 	SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER);
@@ -243,7 +244,8 @@ int main(int argc, char** argv) {
 	}
 	ResetPalette();
 	SDL_ShowCursor(0);
-
+	
+	// Read TAS file
 	if (argc > 1) {
 		TAS = fopen(argv[1], "r");
 		if (!TAS) {
@@ -251,6 +253,7 @@ int main(int argc, char** argv) {
 		}
 	}
 
+	// Loading and initialization
 	printf("game state size %gkb\n", Celeste_P8_get_state_size()/1024.);
 
 	printf("now loading...\n");
@@ -277,10 +280,12 @@ int main(int argc, char** argv) {
 	printf("ready\n");
 
 	SDL_WM_ToggleFullScreen(screen);
-
+	
+	// Run Game
 	while (running)
 		mainLoop();
-
+	
+	// Exit
 	if (game_state)
 		SDL_free(game_state);
 	if (initial_game_state)
