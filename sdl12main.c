@@ -402,15 +402,26 @@ static void mainLoop(void) {
 			break;
 		}
 	}
-
+	
+	// If there is no TAS file loaded use keyboard as input
 	if (!TAS) {
-		if (kbstate[SDLK_a])  buttons_state |= (1<<0);
-		if (kbstate[SDLK_d]) buttons_state |= (1<<1);
-		if (kbstate[SDLK_w])    buttons_state |= (1<<2);
-		if (kbstate[SDLK_s])  buttons_state |= (1<<3);
-		if (kbstate[SDLK_m] || kbstate[SDLK_o]) buttons_state |= (1<<4);
-		if (kbstate[SDLK_k]) buttons_state |= (1<<5);
-	} else if (TAS && !paused) {
+		if (kbstate[SDLK_a])
+			buttons_state |= (1<<0);   // Left
+		if (kbstate[SDLK_d])
+			buttons_state |= (1<<1);   // Right
+		if (kbstate[SDLK_w])
+			buttons_state |= (1<<2);   // Up
+		if (kbstate[SDLK_s])
+			buttons_state |= (1<<3);   // Down
+		if (kbstate[SDLK_m] || kbstate[SDLK_o])
+			buttons_state |= (1<<4);   // O / A button
+		if (kbstate[SDLK_k])
+			buttons_state |= (1<<5);   // X / B button
+	
+	}
+	// If TAS file loaded and game not paused then
+	// Use TAS text file for controller input foreach frame
+	else if (TAS && !paused) {
 		static int t = 0;
 		t++;
 		if (t==1)
