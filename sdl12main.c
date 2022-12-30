@@ -65,6 +65,8 @@ static void ResetPalette(void) {
 	memcpy(palette, base_palette, sizeof palette);
 }
 
+// Return and modify a path char* (seems stange to do both) that amounts to either
+// data/{filename} or data\{filename}
 static char* GetDataPath(char* path, int n, const char* fname) {
 #ifdef _WIN32
 	char pathsep = '\\';
@@ -76,7 +78,8 @@ static char* GetDataPath(char* path, int n, const char* fname) {
 	return path;
 }
 
-
+// This seems important but also like it does nothing
+// I don't understand the difference between case 1 and case 4
 static Uint32 getpixel(SDL_Surface *surface, int x, int y) {
 	int bpp = surface->format->BytesPerPixel;
 	// Here p is the address to the pixel we want to retrieve
@@ -101,6 +104,8 @@ static Uint32 getpixel(SDL_Surface *surface, int x, int y) {
 	return 0;
 }
 
+// Scales up file bit map and stores it in s parameter
+// Not sure why it looks so complex tho
 static void loadbmpscale(char* filename, SDL_Surface** s) {
 	SDL_Surface* surf = *s;
 	if (surf) SDL_FreeSurface(surf), surf = *s = NULL;
@@ -131,9 +136,13 @@ static void loadbmpscale(char* filename, SDL_Surface** s) {
 	*s = surf;
 }
 
+// Move these to a macro section
+// and / or refactor them out
 #define LOGLOAD(w) printf("loading %s...", w)
 #define LOGDONE() printf("done\n")
 
+// Load data from file into a bunch of globals
+// gfx, font, snd, mus (maybe others)
 static void LoadData(void) {
 	LOGLOAD("gfx.bmp");
 	loadbmpscale("gfx.bmp", &gfx);
@@ -172,6 +181,10 @@ static void LoadData(void) {
 		LOGDONE();
 	}
 }
+
+
+/*--------------- Put everything here somewhere else ------------------------*/
+
 #include "tilemap.h"
 
 static Uint16 buttons_state = 0;
@@ -192,6 +205,10 @@ static void p8_print(const char* str, int x, int y, int col);
 //on-screen display (for info, such as loading a state, toggling screenshake, toggling fullscreen, etc)
 static char osd_text[200] = "";
 static int osd_timer = 0;
+
+/*---------------------------------------------------------------------------*/
+
+// Set On-screen display text via argument and timer to 30
 static void OSDset(const char* fmt, ...) {
 	va_list ap;
 	va_start(ap, fmt);
@@ -201,6 +218,8 @@ static void OSDset(const char* fmt, ...) {
 	osd_timer = 30;
 	va_end(ap);
 }
+
+// Draws on-screen display test if osd_timer isn't zero
 static void OSDdraw(void) {
 	if (osd_timer > 0) {
 		--osd_timer;
@@ -211,7 +230,8 @@ static void OSDdraw(void) {
 		p8_print(osd_text, x, y, 7);
 	}
 }
-	
+
+// Oh look more static globals and two function prototypes to mix things up
 static Mix_Music* current_music = NULL;
 static _Bool enable_screenshake = 1;
 static _Bool paused = 0;
@@ -224,6 +244,7 @@ static FILE* TAS = NULL;
 static void InitGamepadInput(void);
 static int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...);
 
+// Main function move this to the top function and below all the prototypes
 int main(int argc, char** argv) {
 	// SDL initialization that I don't understand
 	SDL_CHECK(SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO) == 0);
