@@ -63,7 +63,6 @@ static void* initial_game_state = NULL;
 static void* game_state = NULL;
 static Mix_Music* game_state_music = NULL;
 static void mainLoop(void);
-static FILE* TAS = NULL;
 static void InitGamepadInput(void);
 static int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...);
 static inline Uint32 getcolor(char idx);
@@ -113,14 +112,6 @@ int main(int argc, char** argv) {
 	ResetPalette();
 	SDL_ShowCursor(0);
 	
-	// Read TAS file
-	if (argc > 1) {
-		TAS = fopen(argv[1], "r");
-		if (!TAS) {
-			printf("couldn't open TAS file '%s': %s\n", argv[1], strerror(errno));
-		}
-	}
-
 	// Loading and initialization
 	printf("game state size %gkb\n", Celeste_P8_get_state_size()/1024.);
 
@@ -136,12 +127,7 @@ int main(int argc, char** argv) {
 	initial_game_state = SDL_malloc(Celeste_P8_get_state_size());
 	if (initial_game_state) Celeste_P8_save_state(initial_game_state);
 
-	if (TAS) {
-		// a consistent seed for tas playback
-		Celeste_P8_set_rndseed(8);
-	} else {
-		Celeste_P8_set_rndseed((unsigned)(time(NULL) + SDL_GetTicks()));
-	}
+	Celeste_P8_set_rndseed((unsigned)(time(NULL) + SDL_GetTicks()));
 
 	Celeste_P8_init();
 
@@ -432,37 +418,18 @@ static void mainLoop(void) {
 	}
 	
 	// If there is no TAS file loaded use keyboard as input
-	if (!TAS) {
-		if (kbstate[SDLK_a])
-			buttons_state |= (1<<0);   // Left
-		if (kbstate[SDLK_d])
-			buttons_state |= (1<<1);   // Right
-		if (kbstate[SDLK_w])
-			buttons_state |= (1<<2);   // Up
-		if (kbstate[SDLK_s])
-			buttons_state |= (1<<3);   // Down
-		if (kbstate[SDLK_m] || kbstate[SDLK_o])
-			buttons_state |= (1<<4);   // O / A button
-		if (kbstate[SDLK_k])
-			buttons_state |= (1<<5);   // X / B button
-	
-	}
-	// If TAS file loaded and game not paused then
-	// Use TAS text file for controller input foreach frame
-	else if (TAS && !paused) {
-		static int t = 0;
-		t++;
-		if (t==1)
-			// Start game by pressing dash and jump
-			buttons_state = (1<<4) + (1<<5);
-		else if (t > 80) {
-			int btn;
-			fscanf(TAS, "%d,", &btn);
-			buttons_state = btn;
-		} else
-			buttons_state = 0;
-		printf("%i: %i\n",t, buttons_state);
-	}
+	if (kbstate[SDLK_a])
+		buttons_state |= (1<<0);   // Left
+	if (kbstate[SDLK_d])
+		buttons_state |= (1<<1);   // Right
+	if (kbstate[SDLK_w])
+		buttons_state |= (1<<2);   // Up
+	if (kbstate[SDLK_s])
+		buttons_state |= (1<<3);   // Down
+	if (kbstate[SDLK_m] || kbstate[SDLK_o])
+		buttons_state |= (1<<4);   // O / A button
+	if (kbstate[SDLK_k])
+		buttons_state |= (1<<5);   // X / B button
 
 	if (paused) {
 		const int x0 = PICO8_W/2-3*4, y0 = 8;
