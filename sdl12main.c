@@ -12,6 +12,7 @@
 #include <errno.h>
 #include <time.h>
 #include "celeste.h"
+#include "tilemap.h"
 
 static void ErrLog(char* fmt, ...) {
 	FILE* f = stderr;
@@ -53,6 +54,125 @@ static const SDL_Color base_palette[16] = {
 	{0xff, 0xcc, 0xaa}
 };
 static SDL_Color palette[16];
+// Oh look more static globals and two function prototypes to mix things up
+static Mix_Music* current_music = NULL;
+static _Bool enable_screenshake = 1;
+static _Bool paused = 0;
+static _Bool running = 1;
+static void* initial_game_state = NULL;
+static void* game_state = NULL;
+static Mix_Music* game_state_music = NULL;
+static void mainLoop(void);
+static FILE* TAS = NULL;
+static void InitGamepadInput(void);
+static int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...);
+static inline Uint32 getcolor(char idx);
+static void ResetPalette(void);
+static char* GetDataPath(char* path, int n, const char* fname);
+static Uint32 getpixel(SDL_Surface *surface, int x, int y);
+static void loadbmpscale(char* filename, SDL_Surface** s);
+static void LoadData(void);
+
+static Uint16 buttons_state = 0;
+
+// I don't understand how this macro works
+// It runs at the beginning of main function tho
+#define SDL_CHECK(r) do {                               \
+	if (!(r)) {                                           \
+		ErrLog("%s:%i, fatal error: `%s` -> %s\n", \
+		        __FILE__, __LINE__, #r, SDL_GetError());    \
+		exit(2);                                            \
+	}                                                     \
+} while(0)
+
+static void p8_rectfill(int x0, int y0, int x1, int y1, int col);
+static void p8_print(const char* str, int x, int y, int col);
+
+//on-screen display (for info, such as loading a state, toggling screenshake, toggling fullscreen, etc)
+static char osd_text[200] = "";
+static int osd_timer = 0;
+
+int main(int argc, char** argv) {
+	// SDL initialization that I don't understand
+	SDL_CHECK(SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO) == 0);
+#if SDL_MAJOR_VERSION >= 2
+	SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER);
+	SDL_GameControllerAddMappingsFromRW(SDL_RWFromFile("gamecontrollerdb.txt", "rb"), 1);
+#endif
+	int videoflag = SDL_SWSURFACE | SDL_HWPALETTE;
+
+	SDL_CHECK(screen = SDL_SetVideoMode(PICO8_W*scale, PICO8_H*scale, 32, videoflag));
+	SDL_WM_SetCaption("Celeste", NULL);
+	int mixflag = MIX_INIT_OGG;
+	if (Mix_Init(mixflag) != mixflag) {
+		ErrLog("Mix_Init: %s\n", Mix_GetError());
+	}
+	if (Mix_OpenAudio(22050, AUDIO_S16SYS, 1, 1024) < 0) {
+		ErrLog("Mix_Init: %s\n", Mix_GetError());
+	}
+	ResetPalette();
+	SDL_ShowCursor(0);
+	
+	// Read TAS file
+	if (argc > 1) {
+		TAS = fopen(argv[1], "r");
+		if (!TAS) {
+			printf("couldn't open TAS file '%s': %s\n", argv[1], strerror(errno));
+		}
+	}
+
+	// Loading and initialization
+	printf("game state size %gkb\n", Celeste_P8_get_state_size()/1024.);
+
+	printf("now loading...\n");
+	
+	InitGamepadInput();
+	
+	LoadData();
+
+	Celeste_P8_set_call_func(pico8emu);
+
+	//for reset
+	initial_game_state = SDL_malloc(Celeste_P8_get_state_size());
+	if (initial_game_state) Celeste_P8_save_state(initial_game_state);
+
+	if (TAS) {
+		// a consistent seed for tas playback
+		Celeste_P8_set_rndseed(8);
+	} else {
+		Celeste_P8_set_rndseed((unsigned)(time(NULL) + SDL_GetTicks()));
+	}
+
+	Celeste_P8_init();
+
+	printf("ready\n");
+
+	SDL_WM_ToggleFullScreen(screen);
+	
+	// Run Game
+	while (running)
+		mainLoop();
+	
+	// Exit
+	if (game_state)
+		SDL_free(game_state);
+	if (initial_game_state)
+		SDL_free(initial_game_state);
+
+	SDL_FreeSurface(gfx);
+	SDL_FreeSurface(font);
+	for (int i = 0; i < (sizeof snd)/(sizeof *snd); i++) {
+		if (snd[i]) Mix_FreeChunk(snd[i]);
+	}
+	for (int i = 0; i < (sizeof mus)/(sizeof *mus); i++) {
+		if (mus[i]) Mix_FreeMusic(mus[i]);
+	}
+
+	Mix_CloseAudio();
+	Mix_Quit();
+	SDL_Quit();
+	return 0;
+}
 
 static inline Uint32 getcolor(char idx) {
 	SDL_Color c = palette[idx%16];
@@ -185,26 +305,6 @@ static void LoadData(void) {
 
 /*--------------- Put everything here somewhere else ------------------------*/
 
-#include "tilemap.h"
-
-static Uint16 buttons_state = 0;
-
-// I don't understand how this macro works
-// It runs at the beginning of main function tho
-#define SDL_CHECK(r) do {                               \
-	if (!(r)) {                                           \
-		ErrLog("%s:%i, fatal error: `%s` -> %s\n", \
-		        __FILE__, __LINE__, #r, SDL_GetError());    \
-		exit(2);                                            \
-	}                                                     \
-} while(0)
-
-static void p8_rectfill(int x0, int y0, int x1, int y1, int col);
-static void p8_print(const char* str, int x, int y, int col);
-
-//on-screen display (for info, such as loading a state, toggling screenshake, toggling fullscreen, etc)
-static char osd_text[200] = "";
-static int osd_timer = 0;
 
 /*---------------------------------------------------------------------------*/
 
@@ -231,101 +331,8 @@ static void OSDdraw(void) {
 	}
 }
 
-// Oh look more static globals and two function prototypes to mix things up
-static Mix_Music* current_music = NULL;
-static _Bool enable_screenshake = 1;
-static _Bool paused = 0;
-static _Bool running = 1;
-static void* initial_game_state = NULL;
-static void* game_state = NULL;
-static Mix_Music* game_state_music = NULL;
-static void mainLoop(void);
-static FILE* TAS = NULL;
-static void InitGamepadInput(void);
-static int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...);
 
 // Main function move this to the top function and below all the prototypes
-int main(int argc, char** argv) {
-	// SDL initialization that I don't understand
-	SDL_CHECK(SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO) == 0);
-#if SDL_MAJOR_VERSION >= 2
-	SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER);
-	SDL_GameControllerAddMappingsFromRW(SDL_RWFromFile("gamecontrollerdb.txt", "rb"), 1);
-#endif
-	int videoflag = SDL_SWSURFACE | SDL_HWPALETTE;
-
-	SDL_CHECK(screen = SDL_SetVideoMode(PICO8_W*scale, PICO8_H*scale, 32, videoflag));
-	SDL_WM_SetCaption("Celeste", NULL);
-	int mixflag = MIX_INIT_OGG;
-	if (Mix_Init(mixflag) != mixflag) {
-		ErrLog("Mix_Init: %s\n", Mix_GetError());
-	}
-	if (Mix_OpenAudio(22050, AUDIO_S16SYS, 1, 1024) < 0) {
-		ErrLog("Mix_Init: %s\n", Mix_GetError());
-	}
-	ResetPalette();
-	SDL_ShowCursor(0);
-	
-	// Read TAS file
-	if (argc > 1) {
-		TAS = fopen(argv[1], "r");
-		if (!TAS) {
-			printf("couldn't open TAS file '%s': %s\n", argv[1], strerror(errno));
-		}
-	}
-
-	// Loading and initialization
-	printf("game state size %gkb\n", Celeste_P8_get_state_size()/1024.);
-
-	printf("now loading...\n");
-	
-	InitGamepadInput();
-	
-	LoadData();
-
-	Celeste_P8_set_call_func(pico8emu);
-
-	//for reset
-	initial_game_state = SDL_malloc(Celeste_P8_get_state_size());
-	if (initial_game_state) Celeste_P8_save_state(initial_game_state);
-
-	if (TAS) {
-		// a consistent seed for tas playback
-		Celeste_P8_set_rndseed(8);
-	} else {
-		Celeste_P8_set_rndseed((unsigned)(time(NULL) + SDL_GetTicks()));
-	}
-
-	Celeste_P8_init();
-
-	printf("ready\n");
-
-	SDL_WM_ToggleFullScreen(screen);
-	
-	// Run Game
-	while (running)
-		mainLoop();
-	
-	// Exit
-	if (game_state)
-		SDL_free(game_state);
-	if (initial_game_state)
-		SDL_free(initial_game_state);
-
-	SDL_FreeSurface(gfx);
-	SDL_FreeSurface(font);
-	for (int i = 0; i < (sizeof snd)/(sizeof *snd); i++) {
-		if (snd[i]) Mix_FreeChunk(snd[i]);
-	}
-	for (int i = 0; i < (sizeof mus)/(sizeof *mus); i++) {
-		if (mus[i]) Mix_FreeMusic(mus[i]);
-	}
-
-	Mix_CloseAudio();
-	Mix_Quit();
-	SDL_Quit();
-	return 0;
-}
 
 #if SDL_MAJOR_VERSION >= 2
 /* These inputs aren't sent to the game. */
