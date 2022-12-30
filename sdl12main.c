@@ -11,9 +11,6 @@
 #include <assert.h>
 #include <errno.h>
 #include <time.h>
-#ifdef _3DS
-#include <3ds.h>
-#endif
 #include "celeste.h"
 
 static void ErrLog(char* fmt, ...) {
@@ -79,9 +76,10 @@ static char* GetDataPath(char* path, int n, const char* fname) {
 	return path;
 }
 
+
 static Uint32 getpixel(SDL_Surface *surface, int x, int y) {
 	int bpp = surface->format->BytesPerPixel;
-	/* Here p is the address to the pixel we want to retrieve */
+	// Here p is the address to the pixel we want to retrieve
 	Uint8 *p = (Uint8 *)surface->pixels + y * surface->pitch + x * bpp;
 
 	switch(bpp) {
@@ -178,6 +176,8 @@ static void LoadData(void) {
 
 static Uint16 buttons_state = 0;
 
+// I don't understand how this macro works
+// It runs at the beginning of main function tho
 #define SDL_CHECK(r) do {                               \
 	if (!(r)) {                                           \
 		ErrLog("%s:%i, fatal error: `%s` -> %s\n", \
@@ -441,6 +441,7 @@ static void mainLoop(void) {
 		p8_rectfill(x0-1,y0-1, 6*4+x0+1,6+y0+1, 6);
 		p8_rectfill(x0,y0, 6*4+x0,6+y0, 0);
 		p8_print("paused", x0+1, y0+1, 7);
+		// Press left and jump while paused to reset
 		if (initial_game_state != NULL
 				&& (buttons_state & 0b010001) == 0b010001) {
 			//reset
