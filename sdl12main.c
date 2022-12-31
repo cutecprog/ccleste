@@ -893,7 +893,8 @@ static void InitGamepadInput() {
 			int i;
 			for (i = 0; i < sizeof controller_mappings / sizeof *controller_mappings - 1;) {
 				char line[150], p8btn[31], sdlbtn[31];
-				fgets(line, sizeof line - 1, cfg);
+				if (fgets(line, sizeof line - 1, cfg) == NULL)
+					printf("input cfg: EOF\n");
 				if (feof(cfg) || ferror(cfg)) break;
 				line[sizeof line - 1] = 0;
 				if (*line == '#') {
