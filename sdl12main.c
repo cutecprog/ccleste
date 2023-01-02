@@ -134,7 +134,9 @@ int main(int argc, char** argv) {
 	printf("ready\n");
 
 	SDL_WM_ToggleFullScreen(screen);
-	
+	Mix_Volume(-1, 1);
+	Mix_VolumeMusic(1);	
+
 	// Run Game
 	while (running)
 		mainLoop();
