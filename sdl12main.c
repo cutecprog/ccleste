@@ -133,6 +133,7 @@ int main(int argc, char** argv) {
 
 	printf("ready\n");
 
+	// Default options (currently unchargable)
 	SDL_WM_ToggleFullScreen(screen);
 	Mix_Volume(-1, 1);
 	Mix_VolumeMusic(1);	
